@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf7ef">
+  <title>20号，和你约会</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 55S8 41 8 22C8 8 26 6 32 18 38 6 56 8 56 22c0 19-24 33-24 33Z' fill='%23ed5c61' stroke='%2320201d' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app-shell">
+    <span class="binding" aria-hidden="true"></span>
+
+    <header class="topbar">
+      <button id="backButton" class="icon-button back-button" type="button" aria-label="返回上一步" title="返回" hidden>←</button>
+      <a class="mini-brand" href="#" id="homeLink" aria-label="回到约会首页">
+        <span>20</span><b>我们的约会</b>
+      </a>
+      <button id="ideaButton" class="icon-button" type="button" aria-haspopup="dialog" aria-label="补充想吃、想喝或想去的地方" title="补充想法">✎</button>
+    </header>
+
+    <section id="introView" class="view intro-view" data-view="intro">
+      <div class="intro-hero">
+        <div class="intro-copy">
+          <p class="eyebrow">OUR DATE · SHENZHEN</p>
+          <h1>20号<br>和你约会</h1>
+          <span class="red-stroke" aria-hidden="true"></span>
+        </div>
+        <figure class="dog-polaroid">
+          <img src="assets/line-puppy-hug.gif" width="160" height="138" alt="线条小狗亲密拥抱">
+          <figcaption>贴贴 ♡</figcaption>
+        </figure>
+      </div>
+
+      <div class="fixed-plan" aria-label="固定时间安排">
+        <article class="plan-row">
+          <time datetime="00:00">00:00</time>
+          <span class="plan-dot coral" aria-hidden="true"></span>
+          <div><small>20号凌晨</small><h2>下班，去酒店休息</h2><p>南山出发 · 不安排别的</p></div>
+        </article>
+        <article class="plan-row">
+          <time datetime="12:00">12:00</time>
+          <span class="plan-dot mint" aria-hidden="true"></span>
+          <div><small>第二天中午</small><h2>睡醒，再慢慢出门</h2><p>午饭和下午的安排由她来选</p></div>
+        </article>
+      </div>
+
+      <button id="startButton" class="primary-button" type="button">开始选午饭 <span>→</span></button>
+      <button id="resumeButton" class="text-button" type="button" hidden>继续上次的选择</button>
+    </section>
+
+    <section id="pickerView" class="view picker-view" data-view="picker" hidden>
+      <div class="stage-heading">
+        <div>
+          <p id="stageEyebrow" class="eyebrow">STEP 01 · LUNCH</p>
+          <h1 id="stageQuestion">中午想吃什么？</h1>
+        </div>
+        <div id="savedCounter" class="saved-counter" aria-live="polite"><span>已收录</span><b>0/3</b></div>
+      </div>
+
+      <div id="deck" class="deck" aria-live="polite">
+        <article id="nextCardPreview" class="next-card-preview" aria-hidden="true">
+          <div class="card-media">
+            <img id="nextCardImage" src="" alt="" width="1024" height="768" draggable="false">
+            <span id="nextCardKind" class="card-kind"></span>
+            <span id="nextCardWeather" class="card-weather" hidden></span>
+          </div>
+          <div class="card-copy">
+            <div class="card-title-row">
+              <h2 id="nextCardTitle"></h2>
+              <strong id="nextCardPrice"></strong>
+            </div>
+            <p id="nextCardArea" class="card-area"></p>
+          </div>
+        </article>
+        <article id="swipeCard" class="swipe-card" tabindex="0" role="button">
+          <div class="card-media">
+            <img id="cardImage" src="" alt="" width="1024" height="768" draggable="false">
+            <span id="cardKind" class="card-kind"></span>
+            <span id="cardWeather" class="card-weather" hidden></span>
+          </div>
+          <div class="card-copy">
+            <div class="card-title-row">
+              <h2 id="cardTitle"></h2>
+              <strong id="cardPrice"></strong>
+            </div>
+            <p id="cardArea" class="card-area"></p>
+            <p id="cardDescription" class="card-description"></p>
+            <div id="cardTags" class="card-tags"></div>
+          </div>
+          <div id="collectBurst" class="collect-burst" aria-hidden="true"><span>♥</span></div>
+        </article>
+      </div>
+
+      <div class="deck-actions" aria-label="卡片操作">
+        <button id="skipButton" class="action-button skip-button" type="button" aria-label="不喜欢，换一个" title="换一个">×</button>
+        <div class="deck-position"><b id="deckPosition">1</b><span id="deckTotal">/ 24</span></div>
+        <button id="saveButton" class="action-button save-button" type="button" aria-label="收录这个选择" title="收录">♡</button>
+      </div>
+
+      <div id="savedPreview" class="saved-preview" aria-live="polite"></div>
+      <button id="reviewButton" class="secondary-button" type="button" hidden></button>
+    </section>
+
+    <section id="completeView" class="view complete-view" data-view="complete" hidden>
+      <div class="complete-hero">
+        <p class="eyebrow">DATE SAVED · ♡</p>
+        <h1>很高兴<br>和你约会</h1>
+        <img src="assets/line-puppy-hug.gif" width="184" height="158" alt="线条小狗亲密拥抱">
+      </div>
+
+      <section class="final-plan" aria-label="最终约会安排">
+        <div class="final-plan-head"><small>OUR LITTLE PLAN</small><h2>约会安排好了</h2></div>
+        <ol id="finalTimeline" class="final-timeline"></ol>
+      </section>
+
+      <div id="wishSummary" class="wish-summary" hidden></div>
+      <button id="editPlanButton" class="secondary-button" type="button">修改选择</button>
+      <button id="restartButton" class="text-button danger-text" type="button">重新选一次</button>
+    </section>
+  </main>
+
+  <dialog id="ideaDialog" class="idea-dialog">
+    <form id="ideaForm" method="dialog">
+      <div class="dialog-head">
+        <div><small>HER IDEAS</small><h2>补充想法</h2></div>
+        <button id="closeIdeaDialog" class="icon-button" type="button" aria-label="关闭">×</button>
+      </div>
+      <label for="wishEat"><span>想吃什么</span><textarea id="wishEat" rows="2" maxlength="80" placeholder="写下想吃的…"></textarea></label>
+      <label for="wishDrink"><span>想喝什么</span><textarea id="wishDrink" rows="2" maxlength="80" placeholder="写下想喝的…"></textarea></label>
+      <label for="wishGo"><span>想去哪里</span><textarea id="wishGo" rows="2" maxlength="80" placeholder="写下想去的…"></textarea></label>
+      <button class="primary-button dialog-submit" type="submit">保存想法</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="assertive">
+    <img src="assets/line-puppy-hug.gif" width="34" height="30" alt="">
+    <span id="toastText"></span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
