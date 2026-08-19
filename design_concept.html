@@ -114,6 +114,31 @@
     <div class="ticket-export-btn" id="exportBtn" onclick="exportTicket()">生成约会券 发给TA 💌</div>
   </div>
 
+
+  <!-- Romantic Ticket Template (Hidden) -->
+  <div id="romanticTicket" style="position: absolute; left: -9999px; width: 400px; background: #fffdf8; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); font-family: 'Kaiti SC', serif; color: #20201d; box-sizing: border-box;">
+    <!-- Decorative Header -->
+    <div style="text-align: center; border-bottom: 2px dashed #d6cec0; padding-bottom: 20px; margin-bottom: 20px;">
+      <h1 style="margin: 0; font-size: 28px; color: #ed5c61; letter-spacing: 2px;">Our Date Ticket</h1>
+      <p style="margin: 8px 0 0; font-size: 14px; color: #716b63;">August 20, Shenzhen</p>
+    </div>
+
+    <!-- Timeline Items -->
+    <div id="ticketTimeline" style="position: relative;">
+      <!-- Filled via JS -->
+    </div>
+
+    <!-- Footer with puppy and barcode -->
+    <div style="text-align: center; margin-top: 30px; border-top: 2px dashed #d6cec0; padding-top: 20px;">
+      <img src="assets/line-puppy-hug.gif" style="width: 100px; margin-bottom: 15px;">
+      <p style="margin: 0; font-size: 16px; font-weight: bold;">和你一起，怎样都好 ♡</p>
+      <div style="margin-top: 15px; font-family: monospace; font-size: 12px; letter-spacing: 4px; color: #716b63;">
+        ||| | || | | || | | || | | || |
+        <br>0820-LOVE-YOU
+      </div>
+    </div>
+  </div>
+
   <script>
 function orderCards(catalog, orderedIds) {
   const byId = new Map(catalog.map((item) => [item.id, item]));
@@ -392,15 +417,44 @@ const playCards = [
       });
     });
 
-    function exportTicket() {
+        function exportTicket() {
       const btn = document.getElementById('exportBtn');
-      btn.innerText = "生成中...";
-      html2canvas(document.getElementById('captureArea'), {
-         backgroundColor: '#faf7ef',
+      btn.innerText = "生成浪漫长图中...";
+      
+      // Populate the romantic ticket
+      const timelineEl = document.getElementById('ticketTimeline');
+      timelineEl.innerHTML = '';
+      
+      const labels = ['中午 · 阳光正好', '下午 · 漫步时光', '傍晚 · 夜色温柔'];
+      slots.forEach((item, index) => {
+        if(!item) return;
+        timelineEl.innerHTML += `
+          <div style="display: flex; margin-bottom: 25px; position: relative;">
+            <div style="width: 2px; background: #ed5c61; position: absolute; left: 14px; top: 30px; bottom: -30px; ${index === 2 ? 'display:none;' : ''}"></div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #ed5c61; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: sans-serif; font-size: 14px; z-index: 1;">${index+1}</div>
+            <div style="margin-left: 20px; flex: 1;">
+              <p style="margin: 0 0 5px; font-size: 12px; color: #716b63;">${labels[index]}</p>
+              <h3 style="margin: 0 0 10px; font-size: 20px;">${item.title}</h3>
+              <div style="background: white; padding: 6px; border: 1px solid #d6cec0; border-radius: 4px; transform: rotate(${index%2===0 ? '2deg' : '-2deg'}); box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                <img src="${item.image}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 2px;">
+                <p style="margin: 8px 0 4px; font-size: 12px; text-align: center; color: #716b63;">📍 ${item.area}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Render the hidden ticket element instead of the app shell
+      const target = document.getElementById('romanticTicket');
+      target.style.left = '0'; // Bring it into viewport briefly to ensure proper rendering if needed, though html2canvas usually handles absolute hidden.
+      
+      html2canvas(target, {
+         backgroundColor: null,
          scale: 2
       }).then(canvas => {
+        target.style.left = '-9999px'; // Hide it again
         const link = document.createElement('a');
-        link.download = 'our-date-ticket.png';
+        link.download = 'Our-Romantic-Date-Ticket.png';
         link.href = canvas.toDataURL();
         link.click();
         btn.innerText = "已保存！快去发给TA吧 💌";
