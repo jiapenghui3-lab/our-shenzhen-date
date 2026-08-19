@@ -674,7 +674,7 @@ function renderComplete() {
   const foodNames = foods.map((item) => item.title).join(' / ');
   const playNames = play.map((item) => `${item.title}（${item.weather}）`).join(' / ');
   const timeline = [
-    { time: '00:00', title: '下班，去酒店休息', detail: '南山出发 · 酒店名字不显示' },
+    { time: '00:00', title: '下班出去玩', detail: '南山出发 · 开启约会' },
     { time: '12:00', title: '睡醒，慢慢出门', detail: '不用赶时间' },
     { time: '12:45', title: '午饭备选', detail: foodNames },
     { time: '14:00', title: '买一束小花', detail: '沿路花店 · 选一束轻轻松松的小花' },
