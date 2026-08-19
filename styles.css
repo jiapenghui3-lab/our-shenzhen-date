@@ -350,7 +350,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 .deck.is-dragging .next-card-preview,
-.deck.is-resetting .next-card-preview { transition: none; }
+.deck.is-resetting .next-card-preview, .deck.is-resetting .swipe-card { transition: none; }
 
 .next-card-preview .card-copy { padding-top: 14px; }
 .next-card-preview .card-title-row h2 { font-size: 19px; }

@@ -424,11 +424,21 @@ function setNextCardProgress(value) {
 }
 
 function resetDeckMotion(immediate = false) {
-  if (immediate) elements.deck.classList.add('is-resetting');
+  if (immediate) {
+    elements.card.style.transition = 'none';
+    elements.nextCardPreview.style.transition = 'none';
+  }
   elements.deck.classList.remove('is-dragging', 'is-advancing');
   setNextCardProgress(0);
+  elements.card.classList.remove('flying');
+  elements.nextCardPreview.style.transform = '';
+  
   if (immediate) {
-    window.requestAnimationFrame(() => elements.deck.classList.remove('is-resetting'));
+    elements.card.style.transform = '';
+    elements.card.style.opacity = '';
+    void elements.card.offsetHeight; // Force layout flush
+    elements.card.style.transition = '';
+    elements.nextCardPreview.style.transition = '';
   }
 }
 
@@ -462,10 +472,8 @@ function renderCard() {
   if (!item) return;
   const alreadySaved = activeSavedIds().includes(item.id);
 
-  resetDeckMotion(true);
   elements.card.className = 'swipe-card';
-  elements.card.style.transform = '';
-  elements.card.style.opacity = '';
+  resetDeckMotion(true);
   elements.collectBurst.classList.remove('show');
   elements.cardKind.textContent = alreadySaved ? '已收录' : item.kind;
   elements.cardWeather.hidden = activeMode === 'food';
@@ -542,6 +550,39 @@ function renderSavedPreview() {
   elements.saveButton.disabled = saved.length >= MAX_SAVED || saved.some((item) => item.id === currentCard().id);
 }
 
+
+function pullBackPrevious() {
+  if (animating) return;
+  animating = true;
+  lastTouchTap = null;
+  elements.deck.classList.remove('is-dragging');
+
+  // Update state to previous card
+  const cards = activeCards();
+  setCurrentIndex((currentIndex() - 1 + cards.length) % cards.length);
+  saveState();
+
+  // Render updates the DOM and flushes layout (thanks to our previous patch)
+  renderCard();
+
+  // Instantly place it off-screen left
+  elements.card.style.transition = 'none';
+  elements.card.style.transform = 'translateX(-132%) rotate(-13deg)';
+  elements.card.style.opacity = '0';
+  void elements.card.offsetHeight; // force flush
+
+  // Animate it in to the center
+  elements.card.style.transition = 'transform 220ms ease, opacity 220ms ease';
+  elements.card.style.transform = '';
+  elements.card.style.opacity = '';
+
+  const delay = reducedMotion.matches ? 15 : 245;
+  transitionTimer = window.setTimeout(() => {
+    animating = false;
+    elements.card.style.transition = '';
+  }, delay);
+}
+
 function skipCurrent(visualDirection = -1) {
   if (animating || !nextCardReady) return;
   animating = true;
@@ -582,6 +623,14 @@ function collectCurrent() {
   elements.collectBurst.classList.add('show');
   renderSavedPreview();
   showToast(`已收录 ${saved.length}/${MAX_SAVED}`);
+
+  // 让卡片向右飞出，同时底下的卡片放大
+  elements.deck.classList.remove('is-dragging');
+  elements.deck.classList.add('is-advancing');
+  elements.card.classList.add('flying');
+  setNextCardProgress(1);
+  elements.card.style.transform = `translateX(132%) rotate(13deg)`;
+  elements.card.style.opacity = '0';
 
   const delay = reducedMotion.matches ? 120 : 650;
   transitionTimer = window.setTimeout(() => {
@@ -783,7 +832,7 @@ function finishPointer(event) {
   elements.deck.classList.remove('is-dragging');
 
   if (start.axis === 'horizontal' && (Math.abs(dx) > 62 || (Math.abs(dx) > 30 && velocity > 0.45))) {
-    skipCurrent(dx < 0 ? -1 : 1);
+    if (dx > 0) { skipCurrent(1, false); } else { pullBackPrevious(); }
     return;
   }
 
@@ -791,7 +840,7 @@ function finishPointer(event) {
   setNextCardProgress(0);
 
   const isTap = Math.abs(dx) < 9 && Math.abs(dy) < 9 && elapsed < 260;
-  if (start.type !== 'touch' || !isTap) return;
+  if (!isTap) return;
   const now = performance.now();
   const sameTap = lastTouchTap
     && lastTouchTap.cardId === start.cardId

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>新概念设计 - 约会填空</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --ink: #20201d; --paper: #faf7ef; --paper-bright: #fffdf8;
+      --coral: #ed5c61; --mint: #aad8bd; --yellow: #f1cf6b; --sky: #9fc9df;
+      --muted: #716b63; --line: #d6cec0; --shadow: 4px 5px 0 var(--ink);
+      --font-display: "Kaiti SC", "STKaiti", "KaiTi", serif;
+      --font-body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: var(--font-body);
+      display: flex; justify-content: center;
+    }
+    .app-shell {
+      width: 100%; max-width: 480px; min-height: 100svh;
+      background-color: var(--paper);
+      background-image: radial-gradient(#cbbfae 0.55px, transparent 0.55px);
+      background-size: 8px 8px;
+      display: flex; flex-direction: column;
+    }
+    header { padding: 20px; text-align: center; border-bottom: 2px solid var(--ink); background: var(--paper-bright); }
+    header h1 { margin: 0; font-family: var(--font-display); font-size: 24px; }
+    
+    .timeline-board {
+      padding: 20px; background: var(--paper-bright); border-bottom: 2px solid var(--ink);
+    }
+    .slot-item {
+      border: 2px dashed var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .slot-item.active { border: 2px solid var(--coral); background: rgba(237, 92, 97, 0.05); }
+    .slot-item.filled { border: 2px solid var(--ink); background: var(--mint); }
+    .slot-time { font-weight: bold; font-size: 14px; width: 45px; }
+    .slot-content { flex: 1; }
+    .slot-content h3 { margin: 0; font-size: 16px; }
+    .slot-content p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+    .slot-img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; border: 1.5px solid var(--ink); }
+
+    .catalog-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .tabs { display: flex; border-bottom: 2px solid var(--ink); }
+    .tab { flex: 1; padding: 12px; text-align: center; font-weight: bold; cursor: pointer; background: var(--line); border-right: 2px solid var(--ink); }
+    .tab:last-child { border-right: none; }
+    .tab.active { background: var(--yellow); }
+
+    .scroll-container { flex: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+    .card {
+      border: 2px solid var(--ink); border-radius: 8px; background: var(--paper-bright);
+      overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.1s;
+    }
+    .card:active { transform: translate(2px, 2px); box-shadow: 2px 3px 0 var(--ink); }
+    .card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 2px solid var(--ink); }
+    .card-info { padding: 8px; }
+    .card-info h4 { margin: 0; font-size: 14px; }
+    .card-info span { font-size: 10px; padding: 2px 4px; border: 1px solid var(--ink); border-radius: 3px; display: inline-block; margin-top: 6px; }
+
+    .ticket-export-btn {
+      margin: 20px; padding: 16px; background: var(--coral); color: #fff; font-weight: bold;
+      text-align: center; border: 2px solid var(--ink); border-radius: 8px; box-shadow: var(--shadow);
+      cursor: pointer; display: none;
+    }
+    .ticket-export-btn:active { transform: translate(2px, 2px); box-shadow: 2px 3px 0 var(--ink); }
+
+    .dog-mascot { text-align: center; padding: 10px; }
+    .dog-mascot img { width: 100px; height: auto; }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="captureArea">
+    <header>
+      <h1>20号 · 约会路线图</h1>
+    </header>
+    
+    <div class="timeline-board">
+      <div class="slot-item active" data-slot="0">
+        <div class="slot-time">12:30</div>
+        <div class="slot-content">
+          <h3>选午餐</h3><p>点击下方橱窗挑选</p>
+        </div>
+      </div>
+      <div class="slot-item" data-slot="1">
+        <div class="slot-time">14:00</div>
+        <div class="slot-content">
+          <h3>下午去哪玩</h3><p>等待挑选...</p>
+        </div>
+      </div>
+      <div class="slot-item" data-slot="2">
+        <div class="slot-time">18:00</div>
+        <div class="slot-content">
+          <h3>选晚餐</h3><p>等待挑选...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dog-mascot" id="mascot">
+       <img src="assets/line-puppy-hug.gif" alt="mascot" id="puppyImg">
+       <div id="puppyText" style="font-size: 12px; font-weight: bold; margin-top: 4px;">开始排兵布阵吧！</div>
+    </div>
+
+    <div class="catalog-section" id="catalogSection">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('food')">🍱 选美食</div>
+        <div class="tab" onclick="switchTab('play')">🏖️ 选去处</div>
+      </div>
+      <div class="scroll-container" id="scrollContainer"></div>
+    </div>
+
+    <div class="ticket-export-btn" id="exportBtn" onclick="exportTicket()">生成约会券 发给TA 💌</div>
+  </div>
+
+  <script>
+function orderCards(catalog, orderedIds) {
+  const byId = new Map(catalog.map((item) => [item.id, item]));
+  return orderedIds.map((id) => byId.get(id)).filter(Boolean);
+}
+    const foodCatalog = [
+  {
+    id: 'cheong-fun', kind: '清爽粤式', title: '肠粉配粥', price: '约 ¥10–22/人',
+    area: '南山各商圈 · 很容易找到', image: 'assets/cards/food-cheong-fun.webp',
+    description: '软滑肠粉配一碗热粥，刚睡醒也吃得舒服。', tags: ['清淡', '粤式', '暖胃']
+  },
+  {
+    id: 'pork-knuckle-rice', kind: '米饭党首选', title: '猪脚饭', price: '约 ¥18–30/人',
+    area: '南山、科技园 · 常见', image: 'assets/cards/food-pork-knuckle-rice.webp',
+    description: '卤得软糯的猪脚配米饭和青菜，实在又管饱。', tags: ['下饭', '份量足', '卤香']
+  },
+  {
+    id: 'chaoshan-kway-teow', kind: '深圳很对味', title: '潮汕牛肉粿条', price: '约 ¥20–35/人',
+    area: '南山、蛇口 · 常见', image: 'assets/cards/food-chaoshan-kway-teow.webp',
+    description: '清汤、牛肉丸和粿条，鲜香但不会太重口。', tags: ['潮汕味', '热汤', '稳妥']
+  },
+  {
+    id: 'chongqing-noodles', kind: '想吃点辣', title: '重庆小面', price: '约 ¥12–25/人',
+    area: '南山各商圈 · 常见', image: 'assets/cards/food-chongqing-noodles.webp',
+    description: '麻辣香气很直接，少辣到重辣都能调。', tags: ['麻辣', '嗦面', '辣度可调']
+  },
+  {
+    id: 'shaxian-set', kind: '经典搭配', title: '沙县小吃套餐', price: '约 ¥12–25/人',
+    area: '深圳到处都容易找到', image: 'assets/cards/food-shaxian-set.webp',
+    description: '拌面、蒸饺再加一份汤，想怎么搭都很轻松。', tags: ['套餐', '选择多', '有汤有面']
+  },
+  {
+    id: 'yunnan-rice-noodles', kind: '汤粉党', title: '云南米线', price: '约 ¥15–30/人',
+    area: '后海、科技园 · 常见', image: 'assets/cards/food-yunnan-rice-noodles.webp',
+    description: '热汤米线配肉和蔬菜，口味可清淡也可酸辣。', tags: ['热乎', '可选口味', '米线']
+  },
+  {
+    id: 'luosifen', kind: '重口快乐', title: '柳州螺蛳粉', price: '约 ¥13–28/人',
+    area: '南山、南头 · 常见', image: 'assets/cards/food-luosifen.webp',
+    description: '酸笋、腐竹和花生都加上，想吃重口就选它。', tags: ['酸辣', '配料足', '嗦粉']
+  },
+  {
+    id: 'roast-meat-rice', kind: '广东经典', title: '烧腊双拼饭', price: '约 ¥22–39/人',
+    area: '南山各商圈 · 常见', image: 'assets/cards/food-roast-meat-rice.webp',
+    description: '叉烧、烧鸭或油鸡任选双拼，一盘就吃得很满足。', tags: ['双拼', '下饭', '粤式']
+  },
+  {
+    id: 'malatang', kind: '她来挑菜', title: '麻辣烫', price: '约 ¥20–39/人',
+    area: '商场和街区都容易找到', image: 'assets/cards/food-malatang.webp',
+    description: '喜欢什么夹什么，辣度和汤底都能自己选。', tags: ['自由搭配', '可选辣度', '热乎']
+  },
+  {
+    id: 'xinjiang-rice-noodles', kind: '香辣浓郁', title: '新疆炒米粉', price: '约 ¥18–32/人',
+    area: '南头、后海 · 容易找到', image: 'assets/cards/food-xinjiang-rice-noodles.webp',
+    description: '粗米粉裹满辣酱，配牛肉和芹菜，越吃越香。', tags: ['香辣', '有嚼劲', '重口']
+  },
+  {
+    id: 'hainan-chicken-rice', kind: '清爽米饭', title: '海南鸡饭', price: '约 ¥22–39/人',
+    area: '海岸城、后海 · 常见', image: 'assets/cards/food-hainan-chicken-rice.webp',
+    description: '嫩鸡、香米和蘸酱组合，清爽又不会吃不饱。', tags: ['鸡肉', '不油腻', '米饭']
+  },
+  {
+    id: 'dumplings', kind: '面食党', title: '东北手工水饺', price: '约 ¥18–35/人',
+    area: '南山、蛇口 · 常见', image: 'assets/cards/food-dumplings.webp',
+    description: '现煮饺子馅料选择多，蘸醋吃简单又舒服。', tags: ['手工', '馅料多', '稳妥']
+  },
+  {
+    id: 'bibimbap', kind: '异国简餐', title: '韩式石锅拌饭', price: '约 ¥22–35/人',
+    area: '商场、大学城 · 常见', image: 'assets/cards/food-bibimbap.webp',
+    description: '蔬菜、煎蛋和米饭拌在一起，锅巴很香。', tags: ['韩式', '蔬菜多', '一人餐']
+  },
+  {
+    id: 'pho', kind: '清爽嗦粉', title: '越南牛肉粉', price: '约 ¥25–39/人',
+    area: '后海、蛇口 · 较常见', image: 'assets/cards/food-pho.webp',
+    description: '清香牛肉汤、米粉和香草，吃完不会太撑。', tags: ['清爽', '牛肉', '东南亚']
+  },
+  {
+    id: 'burger-chicken', kind: '熟悉的快乐', title: '汉堡炸鸡套餐', price: '约 ¥15–35/人',
+    area: '深圳各商圈 · 很容易找到', image: 'assets/cards/food-burger-chicken.webp',
+    description: '脆鸡、汉堡和薯条，想吃简单一点就选它。', tags: ['炸物', '方便', '套餐']
+  },
+  {
+    id: 'mini-hotpot', kind: '热气腾腾', title: '单人小火锅', price: '约 ¥29–39/人',
+    area: '南山商场、街区 · 常见', image: 'assets/cards/food-mini-hotpot.webp',
+    description: '肉菜都有的小锅，不用点一大桌也能吃火锅。', tags: ['小火锅', '荤素都有', '不浪费']
+  },
+  {
+    id: 'beef-noodles', kind: '一碗刚好', title: '兰州牛肉面', price: '约 ¥15–28/人',
+    area: '南山各街区 · 常见', image: 'assets/cards/food-beef-noodles.webp',
+    description: '清汤、牛肉和手工面，热乎、快速、很稳妥。', tags: ['牛肉', '手工面', '热汤']
+  },
+  {
+    id: 'wonton-noodles', kind: '港味小店', title: '鲜虾云吞面', price: '约 ¥18–32/人',
+    area: '蛇口、南头 · 常见', image: 'assets/cards/food-wonton-noodles.webp',
+    description: '弹牙云吞配细面和清汤，口味轻却不寡淡。', tags: ['鲜虾', '清汤', '港味']
+  },
+  {
+    id: 'claypot-rice', kind: '锅巴最香', title: '广式煲仔饭', price: '约 ¥20–38/人',
+    area: '南山、蛇口 · 常见', image: 'assets/cards/food-claypot-rice.webp',
+    description: '腊味或滑鸡配脆锅巴，酱汁一拌就很香。', tags: ['锅巴', '广式', '管饱']
+  },
+  {
+    id: 'roujiamo', kind: '西北搭配', title: '肉夹馍配凉皮', price: '约 ¥15–30/人',
+    area: '科技园、南头 · 常见', image: 'assets/cards/food-roujiamo.webp',
+    description: '一个酥香肉夹馍加一碗凉皮，咸香又开胃。', tags: ['西北味', '套餐', '咸香']
+  },
+  {
+    id: 'japanese-curry', kind: '温和口味', title: '日式咖喱饭', price: '约 ¥20–35/人',
+    area: '南山商场 · 常见', image: 'assets/cards/food-japanese-curry.webp',
+    description: '浓香但不辣，配鸡排或牛肉都很稳妥。', tags: ['不辣', '咖喱', '简餐']
+  },
+  {
+    id: 'panfried-buns', kind: '小吃也顶饱', title: '生煎包套餐', price: '约 ¥15–30/人',
+    area: '后海、南头 · 常见', image: 'assets/cards/food-panfried-buns.webp',
+    description: '底脆多汁的生煎，配一碗汤就是一顿午饭。', tags: ['酥脆', '小吃', '江浙味']
+  },
+  {
+    id: 'sweet-soup', kind: '甜口加场', title: '糖水配小吃', price: '约 ¥10–28/人',
+    area: '南头古城、蛇口 · 选择多', image: 'assets/cards/food-sweet-soup.webp',
+    description: '芒果西米露、豆花或双皮奶，再配一份小吃。', tags: ['甜品', '少量多样', '清甜']
+  },
+  {
+    id: 'cart-noodles', kind: '港式自由配', title: '车仔面', price: '约 ¥18–35/人',
+    area: '蛇口、后海 · 较常见', image: 'assets/cards/food-cart-noodles.webp',
+    description: '鱼蛋、萝卜和肉类自己加，份量也能自己控制。', tags: ['自由搭配', '港式', '粉面']
+  }
+];
+
+const foodCards = orderCards(foodCatalog, [
+  'chongqing-noodles',
+  'luosifen',
+  'pork-knuckle-rice',
+  'xinjiang-rice-noodles',
+  'beef-noodles',
+  'chaoshan-kway-teow',
+  'malatang',
+  'roast-meat-rice',
+  'yunnan-rice-noodles',
+  'cheong-fun',
+  'mini-hotpot',
+  'wonton-noodles',
+  'claypot-rice',
+  'cart-noodles',
+  'roujiamo',
+  'hainan-chicken-rice',
+  'panfried-buns',
+  'dumplings',
+  'bibimbap',
+  'shaxian-set',
+  'japanese-curry',
+  'burger-chicken',
+  'pho',
+  'sweet-soup'
+]);
+
+const playCards = [
+  {
+    id: 'shenzhen-library', kind: '雨天第一选', title: '深圳图书馆', price: '免费 · 看当日开放', weather: '雨天',
+    area: '福田 · 市民中心', image: 'assets/places/play-shenzhen-library.jpg',
+    description: '建筑和光影都很干净，找书、看展或坐着发呆都可以。', tags: ['图书馆', '室内', '建筑感']
+  },
+  {
+    id: 'shenzhen-museum', kind: '慢慢看一下午', title: '深圳博物馆', price: '免费 · 看当日预约', weather: '雨天',
+    area: '福田 · 市民中心', image: 'assets/places/play-shenzhen-museum.jpg',
+    description: '常设展内容丰富，空间大，雨天安排不会显得仓促。', tags: ['博物馆', '室内', '免费']
+  },
+  {
+    id: 'pet-cafe', kind: '下雨就贴贴', title: '当天现场选猫狗咖', price: '看当天团购', weather: '雨天',
+    area: '南山 · 按评分和营业状态选店', image: 'assets/line-puppy-hug.gif', imageFit: 'contain',
+    description: '不预设具体店铺，到当天再挑空间宽敞、评价稳定的一家。', tags: ['猫狗', '室内', '现场选店']
+  },
+  {
+    id: 'sea-world', kind: '海边夜景', title: '海上世界街区', price: '公共区免费', weather: '都可以',
+    area: '南山 · 蛇口', image: 'assets/places/play-sea-world.jpg',
+    description: '明华轮、广场和海边集中在一起，小雨也容易找地方躲。', tags: ['夜景', '海边', '好逛']
+  },
+  {
+    id: 'oct-loft', kind: '艺术街拍', title: 'OCT 创意园', price: '街区免费', weather: '都可以',
+    area: '南山 · 华侨城', image: 'assets/places/play-oct-loft.jpg',
+    description: '旧厂房、树荫和设计小店适合边逛边拍，小雨也有氛围。', tags: ['工业风', '艺术', '小店']
+  },
+  {
+    id: 'talent-park', kind: '湖边看鸟', title: '深圳人才公园', price: '免费', weather: '晴天',
+    area: '南山 · 后海', image: 'assets/places/play-talent-park.jpg',
+    description: '湖边有鸟群和开阔步道，傍晚还能接着看城市夜景。', tags: ['小动物', '湖景', '离南山近']
+  },
+  {
+    id: 'qianhai-stone', kind: '开阔日落', title: '前海石公园', price: '免费', weather: '晴天',
+    area: '南山 · 前海', image: 'assets/places/play-qianhai-stone.jpg',
+    description: '临海草坪和现代建筑很开阔，带一束小花拍照正合适。', tags: ['大草坪', '海景', '出片']
+  },
+  {
+    id: 'dapeng-fortress', kind: '远一点也值得', title: '大鹏所城', price: '古城公共区免费', weather: '都可以',
+    area: '大鹏新区 · 鹏城社区', image: 'assets/places/play-dapeng-fortress.jpg',
+    description: '城墙、古巷和老建筑辨识度高，适合慢慢走和拍照。', tags: ['古城', '建筑', '远途备选']
+  },
+  {
+    id: 'civic-axis', kind: '城市大片', title: '莲花山看城市中轴', price: '免费', weather: '晴天',
+    area: '福田 · 莲花山山顶广场', image: 'assets/places/play-civic-center.jpg',
+    description: '站在高处看市民中心和天际线，视野大，照片也有深圳感。', tags: ['天际线', '城市景观', '免费']
+  }
+];
+
+
+
+    let activeSlot = 0;
+    let currentTab = 'food';
+    const slots = [null, null, null];
+    
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      if (tab === 'food') {
+        document.querySelector('.tab:nth-child(1)').classList.add('active');
+      } else {
+        document.querySelector('.tab:nth-child(2)').classList.add('active');
+      }
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      const container = document.getElementById('scrollContainer');
+      const data = currentTab === 'food' ? foodCatalog : playCards;
+      container.innerHTML = data.map(item => `
+        <div class="card" onclick="fillSlot('${item.id}')">
+          <img src="${item.image}" style="object-fit: ${item.imageFit || 'cover'}">
+          <div class="card-info">
+            <h4>${item.title}</h4>
+            <span>${item.tags[0]}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function fillSlot(id) {
+      const data = currentTab === 'food' ? foodCatalog : playCards;
+      const item = data.find(i => i.id === id);
+      slots[activeSlot] = item;
+      
+      const slotEl = document.querySelector(`.slot-item[data-slot="${activeSlot}"]`);
+      slotEl.classList.add('filled');
+      slotEl.innerHTML = `
+        <div class="slot-time">${['12:30', '14:00', '18:00'][activeSlot]}</div>
+        <div class="slot-content">
+          <h3>${item.title}</h3><p>${item.area}</p>
+        </div>
+        <img class="slot-img" src="${item.image}">
+      `;
+      
+      // Auto advance
+      document.querySelectorAll('.slot-item').forEach(el => el.classList.remove('active'));
+      if (activeSlot < 2) {
+        activeSlot++;
+        document.querySelector(`.slot-item[data-slot="${activeSlot}"]`).classList.add('active');
+        if (activeSlot === 1) switchTab('play');
+        if (activeSlot === 2) switchTab('food');
+        
+        document.getElementById('puppyText').innerText = "选得好！继续！";
+      } else {
+        // Done!
+        document.getElementById('catalogSection').style.display = 'none';
+        document.getElementById('exportBtn').style.display = 'block';
+        document.getElementById('puppyImg').src = "assets/line-puppy-hug.gif";
+        document.getElementById('puppyText').innerText = "排满啦！简直完美 ♡";
+      }
+    }
+
+    // Allow clicking slot to re-select
+    document.querySelectorAll('.slot-item').forEach(el => {
+      el.addEventListener('click', function() {
+        activeSlot = parseInt(this.getAttribute('data-slot'));
+        document.querySelectorAll('.slot-item').forEach(e => e.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('catalogSection').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'none';
+      });
+    });
+
+    function exportTicket() {
+      const btn = document.getElementById('exportBtn');
+      btn.innerText = "生成中...";
+      html2canvas(document.getElementById('captureArea'), {
+         backgroundColor: '#faf7ef',
+         scale: 2
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'our-date-ticket.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        btn.innerText = "已保存！快去发给TA吧 💌";
+      });
+    }
+
+    renderCatalog();
+  </script>
+</body>
+</html>
